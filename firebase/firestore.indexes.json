@@ -1,0 +1,173 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "geohash",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "categoria",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "categoria",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "asignadoA",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reportes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "asignadoA",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "categoria",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "denuncias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "avisos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "comunaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

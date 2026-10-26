@@ -1,0 +1,28 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+
+# Configuración real de Firebase (no se versiona; ver app/google-services.ejemplo.json)
+/app/google-services.json
+
+# Node / Firebase
+node_modules/
+*-debug.log
+.firebase/
+dist/
+
+# Clave de cuenta de servicio para los scripts de demo (nunca se versiona)
+/scripts/demo/clave-servicio.json
+
+# Llave de firma de Play Store y sus claves (nunca se versionan)
+/keystore.properties
+*.jks
+*.keystore

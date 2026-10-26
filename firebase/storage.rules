@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage para Reporte Vecinal.
+// Pégalas en Firebase Console > Storage > Reglas (o despliega con `firebase deploy`).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Fotos de los reportes: reportes/{uid}/{reporteId}.jpg
+    match /reportes/{uid}/{archivo} {
+      allow read: if request.auth != null;
+
+      // Cada usuario sube solo en su carpeta, únicamente imágenes de menos de 5 MB, sin sobrescribir.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow update, delete: if false;
+    }
+  }
+}

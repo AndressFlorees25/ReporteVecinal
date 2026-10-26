@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>ReporteVecinal · Folleto</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --azul: #1565C0; --azul-osc: #0D3C7A; --azul-claro: #E3EEFB;
+    --rojo: #C62828; --rojo-claro: #FDECEA; --naranjo: #EF6C00;
+    --verde: #2E7D32; --tinta: #1B2430; --gris: #5A6675; --linea: #D9E1EA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Roboto, Arial, sans-serif; color: var(--tinta); background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hoja { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; }
+  .hoja:last-child { page-break-after: auto; }
+
+  /* Portada */
+  .cabecera { background: linear-gradient(135deg, var(--azul) 0%, var(--azul-osc) 100%); color: #fff; padding: 16mm 15mm 12mm; height: 128mm; position: relative; }
+  .marca { display: flex; align-items: center; gap: 4mm; }
+  .logo { width: 15mm; height: 15mm; background: #fff; border-radius: 4mm; display: grid; place-items: center; }
+  .marca h1 { font-size: 26pt; font-weight: 800; letter-spacing: -0.5pt; }
+  .marca small { display: block; font-size: 9.5pt; opacity: .8; font-weight: 400; letter-spacing: .3pt; }
+  .lema { margin-top: 12mm; font-size: 25pt; line-height: 1.12; font-weight: 800; max-width: 105mm; }
+  .bajada { margin-top: 5mm; font-size: 11pt; line-height: 1.45; max-width: 100mm; opacity: .92; }
+  .chips { margin-top: 7mm; display: flex; flex-wrap: wrap; gap: 2mm; max-width: 105mm; }
+  .chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); border-radius: 20mm; padding: 1.3mm 3.2mm; font-size: 8.5pt; }
+
+  /* Teléfono dibujado */
+  .tel { position: absolute; right: 15mm; top: 20mm; width: 60mm; height: 118mm; background: #111; border-radius: 8mm; padding: 2.2mm; box-shadow: 0 6mm 14mm rgba(0,0,0,.35); }
+  .pantalla { color: var(--tinta); background: #F6F8FB; border-radius: 6mm; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+  .barra-app { background: var(--azul); color: #fff; padding: 5mm 3.5mm 2.5mm; font-size: 8pt; font-weight: 700; }
+  .foto { margin: 3mm; height: 30mm; border-radius: 2.5mm; background: linear-gradient(160deg, #6d7b88 0%, #3d4650 55%, #2a2f35 100%); position: relative; overflow: hidden; }
+  .foto::after { content: ""; position: absolute; left: 12mm; top: 15mm; width: 26mm; height: 9mm; border-radius: 50%; background: #1b1f24; box-shadow: inset 0 1mm 2mm rgba(0,0,0,.6); }
+  .foto span { position: absolute; left: 2mm; bottom: 1.5mm; color: #fff; font-size: 6pt; background: rgba(0,0,0,.4); padding: .5mm 1.5mm; border-radius: 1mm; z-index: 1; }
+  .campo { margin: 0 3mm 2mm; background: #fff; border: 1px solid var(--linea); border-radius: 2mm; padding: 1.8mm 2.5mm; font-size: 6.5pt; color: var(--gris); }
+  .campo b { display: block; color: var(--tinta); font-size: 7pt; }
+  .mini-chips { display: flex; flex-wrap: wrap; gap: 1mm; margin: 0 3mm 2mm; }
+  .mini-chips i { font-style: normal; font-size: 6pt; padding: .8mm 2mm; border-radius: 3mm; border: 1px solid var(--linea); background: #fff; }
+  .mini-chips i.on { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .boton { margin: auto 3mm 3mm; background: var(--azul); color: #fff; text-align: center; border-radius: 2.5mm; padding: 2.4mm; font-size: 7.5pt; font-weight: 700; }
+  .nav { display: flex; justify-content: space-around; border-top: 1px solid var(--linea); padding: 2mm 0 3mm; font-size: 5.8pt; color: var(--gris); background: #fff; }
+  .nav b { color: var(--azul); }
+
+  /* Cuerpo */
+  .cuerpo { padding: 9mm 15mm 0; }
+  h2 { font-size: 14pt; font-weight: 800; color: var(--azul-osc); margin-bottom: 4mm; display: flex; align-items: center; gap: 2.5mm; }
+  h2::before { content: ""; width: 3mm; height: 6mm; background: var(--azul); border-radius: 1mm; }
+  .pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin-bottom: 8mm; }
+  .paso { background: var(--azul-claro); border-radius: 3mm; padding: 4mm; }
+  .num { width: 7mm; height: 7mm; border-radius: 50%; background: var(--azul); color: #fff; font-weight: 800; font-size: 10pt; display: grid; place-items: center; margin-bottom: 2mm; }
+  .paso b { display: block; font-size: 10.5pt; margin-bottom: 1mm; }
+  .paso p { font-size: 8.8pt; line-height: 1.4; color: var(--gris); }
+  .estados { display: flex; align-items: center; gap: 2mm; margin: -4mm 0 8mm; font-size: 8.5pt; color: var(--gris); }
+  .est { padding: 1mm 3mm; border-radius: 3mm; font-weight: 700; font-size: 8pt; }
+  .grilla { display: grid; grid-template-columns: 1fr 1fr; gap: 3.2mm 6mm; }
+  .item { display: flex; gap: 3mm; align-items: flex-start; }
+  .ico { flex: none; width: 9mm; height: 9mm; border-radius: 2.5mm; background: var(--azul-claro); display: grid; place-items: center; }
+  .item b { display: block; font-size: 10pt; margin-bottom: .6mm; }
+  .item p { font-size: 8.6pt; line-height: 1.38; color: var(--gris); }
+  .pronto { font-size: 6.8pt; font-weight: 700; color: var(--naranjo); border: 1px solid var(--naranjo); border-radius: 2mm; padding: 0 1.4mm; margin-left: 1mm; vertical-align: 1px; }
+
+  .pie { position: absolute; left: 0; right: 0; bottom: 0; padding: 4mm 15mm; border-top: 1px solid var(--linea); font-size: 7.3pt; color: var(--gris); display: flex; justify-content: space-between; gap: 6mm; background: #fff; }
+
+  /* Hoja 2 */
+  .tit2 { background: var(--azul-osc); color: #fff; padding: 9mm 15mm 7mm; }
+  .tit2 h2 { color: #fff; font-size: 19pt; margin-bottom: 2mm; }
+  .tit2 h2::before { background: #fff; }
+  .tit2 p { font-size: 10.5pt; opacity: .9; max-width: 160mm; line-height: 1.45; }
+  .panel { margin: 6mm 15mm 0; display: grid; grid-template-columns: 78mm 1fr; gap: 7mm; align-items: start; }
+  .mapa { height: 56mm; border-radius: 3mm; border: 1px solid var(--linea); position: relative; overflow: hidden; background:
+      linear-gradient(90deg, transparent 47%, #fff 47%, #fff 53%, transparent 53%) 0 0/22mm 22mm,
+      linear-gradient(0deg, transparent 47%, #fff 47%, #fff 53%, transparent 53%) 0 0/22mm 22mm,
+      #E8EEE6; }
+  .mapa .titulo { position: absolute; top: 0; left: 0; right: 0; background: #fff; border-bottom: 1px solid var(--linea); font-size: 7pt; font-weight: 700; padding: 1.8mm 3mm; display: flex; justify-content: space-between; }
+  .mapa .titulo span { font-weight: 400; color: var(--gris); }
+  .pin { position: absolute; width: 4.5mm; height: 4.5mm; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: .6mm solid #fff; box-shadow: 0 .5mm 1mm rgba(0,0,0,.3); }
+  .sector { position: absolute; border: .5mm dashed var(--azul); background: rgba(21,101,192,.1); border-radius: 50%; }
+  .ley { display: flex; gap: 3mm; font-size: 7pt; color: var(--gris); margin-top: 2mm; flex-wrap: wrap; }
+  .ley i { display: inline-block; width: 2.5mm; height: 2.5mm; border-radius: 50%; margin-right: 1mm; vertical-align: -.3mm; }
+  .lista { display: grid; gap: 2.4mm; }
+
+  .emerg { margin: 6mm 15mm 0; background: var(--rojo-claro); border: 1px solid #F5C2BE; border-radius: 3.5mm; padding: 4.5mm 5.5mm; display: grid; grid-template-columns: 1fr 66mm; gap: 6mm; }
+  .emerg h3 { color: var(--rojo); font-size: 13pt; margin-bottom: 2mm; }
+  .emerg p { font-size: 8.8pt; line-height: 1.42; color: #5b2a27; margin-bottom: 2mm; }
+  .emerg ul { list-style: none; display: flex; flex-wrap: wrap; gap: 1.5mm; }
+  .emerg li { font-size: 7.6pt; background: #fff; border: 1px solid #F5C2BE; border-radius: 3mm; padding: .9mm 2.4mm; color: var(--rojo); font-weight: 600; }
+  .banner { background: var(--rojo); color: #fff; border-radius: 2.5mm; padding: 3mm 3.5mm; font-size: 8pt; line-height: 1.35; }
+  .banner b { display: block; font-size: 9pt; margin-bottom: .8mm; }
+  .urg { margin-top: 2.5mm; background: #fff; border-radius: 2.5mm; padding: 2.5mm 3.5mm; font-size: 7.8pt; border: 1px solid #F5C2BE; }
+  .urg div { display: flex; align-items: center; gap: 2mm; margin: .8mm 0; }
+  .urg span { width: 3mm; height: 3mm; border-radius: .6mm; background: var(--rojo); display: inline-block; }
+
+  .porque { margin: 6mm 15mm 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3.5mm; }
+  .dato { border: 1px solid var(--linea); border-radius: 3mm; padding: 3.5mm; }
+  .dato b { display: block; font-size: 9.6pt; color: var(--azul-osc); margin-bottom: 1mm; }
+  .dato p { font-size: 8pt; line-height: 1.35; color: var(--gris); }
+
+  .contacto { margin: 6mm 15mm 0; background: var(--azul); color: #fff; border-radius: 3.5mm; padding: 5mm 7mm; display: grid; grid-template-columns: 1fr auto; gap: 6mm; align-items: center; }
+  .contacto h3 { font-size: 13.5pt; margin-bottom: 1.5mm; }
+  .contacto p { font-size: 9.2pt; opacity: .92; line-height: 1.4; max-width: 105mm; }
+  .datos-c { font-size: 9.5pt; line-height: 1.75; text-align: right; }
+  .datos-c b { font-size: 11.5pt; display: block; }
+  .derechos { position: absolute; left: 15mm; right: 15mm; bottom: 6mm; font-size: 7pt; line-height: 1.45; color: var(--gris); border-top: 1px solid var(--linea); padding-top: 3mm; }
+  .derechos b { color: var(--tinta); }
+</style>
+</head>
+<body>
+
+<!-- ================= HOJA 1: para los vecinos ================= -->
+<section class="hoja">
+  <div class="cabecera">
+    <div class="marca">
+      <div class="logo">
+        <svg width="40" height="40" viewBox="30 28 48 52"><path fill="#1565C0" d="M54,30c-9.4,0-17,7.6-17,17c0,12.8,17,31,17,31s17-18.2,17-31C71,37.6,63.4,30,54,30zM54,53.5c-3.6,0-6.5-2.9-6.5-6.5s2.9-6.5,6.5-6.5s6.5,2.9,6.5,6.5S57.6,53.5,54,53.5z"/></svg>
+      </div>
+      <h1>ReporteVecinal<small>Vecinos y municipalidad, conectados</small></h1>
+    </div>
+    <div class="lema">Tu barrio, reportado en un minuto.</div>
+    <p class="bajada">Una app gratuita para que los vecinos avisen a la municipalidad lo que pasa en sus calles: con foto, con la ubicación exacta y con seguimiento hasta que se resuelve.</p>
+    <div class="chips">
+      <span class="chip">📷 Foto</span><span class="chip">📍 Ubicación GPS</span><span class="chip">🗺️ Mapa del barrio</span><span class="chip">🚨 Modo Emergencia</span><span class="chip">📣 Avisos municipales</span>
+    </div>
+
+    <div class="tel"><div class="pantalla">
+      <div class="barra-app">Nuevo reporte</div>
+      <div class="foto"><span>📷 Foto tomada</span></div>
+      <div class="campo"><b>📍 Av. Ossa 1771, San Ramón</b>Ubicación detectada por GPS</div>
+      <div class="mini-chips"><i class="on">Bache</i><i>Luminaria</i><i>Microbasural</i><i>Otro</i></div>
+      <div class="campo"><b>Descripción</b>Hoyo grande frente al paradero, ya cayó una bicicleta.</div>
+      <div class="boton">Enviar reporte</div>
+      <div class="nav"><b>● Reportar</b><span>Mis reportes</span><span>Mapa</span></div>
+    </div></div>
+  </div>
+
+  <div class="cuerpo">
+    <h2>Cómo funciona</h2>
+    <div class="pasos">
+      <div class="paso"><div class="num">1</div><b>Saca una foto</b><p>Desde la misma app, con la cámara del celular.</p></div>
+      <div class="paso"><div class="num">2</div><b>La ubicación se marca sola</b><p>El GPS indica el lugar exacto: no hay que escribir la dirección.</p></div>
+      <div class="paso"><div class="num">3</div><b>Elige qué pasa y envía</b><p>Bache, luminaria, microbasural u otro, con una descripción corta.</p></div>
+    </div>
+    <div class="estados">El vecino ve cómo avanza su reporte:
+      <span class="est" style="background:#ECEFF3;color:#455A64">Recibido</span>→
+      <span class="est" style="background:#FFF3E0;color:#E65100">Asignado</span>→
+      <span class="est" style="background:#E8F5E9;color:#2E7D32">Resuelto</span>
+    </div>
+
+    <h2>Lo que puede hacer el vecino</h2>
+    <div class="grilla">
+      <div class="item"><div class="ico">📋</div><div><b>Mis reportes en tiempo real</b><p>Lista de todo lo que reportó y su estado, que se actualiza al instante.</p></div></div>
+      <div class="item"><div class="ico">🗺️</div><div><b>Mapa del barrio</b><p>Ve los reportes a 2 km a la redonda, con foto y detalle de cada uno.</p></div></div>
+      <div class="item"><div class="ico">🙋</div><div><b>«A mí también me afecta»</b><p>Apoya un reporte que ya existe en vez de repetirlo. Así se sabe a cuánta gente afecta.</p></div></div>
+      <div class="item"><div class="ico">🚩</div><div><b>Denunciar reportes</b><p>Marca reportes falsos, ofensivos o con datos personales para que la municipalidad los revise.</p></div></div>
+      <div class="item"><div class="ico">📣</div><div><b>Avisos del municipio</b><p>Recibe avisos de su sector: «Evite calle X», «Albergue habilitado en sede Y».</p></div></div>
+      <div class="item"><div class="ico">🚨</div><div><b>Modo Emergencia</b><p>En lluvias, temporales o cortes, reporta lo urgente y marca si hay personas en riesgo.</p></div></div>
+      <div class="item"><div class="ico">💬</div><div><b>Reportar por WhatsApp <span class="pronto">PRÓXIMAMENTE</span></b><p>Foto, ubicación y tipo, sin instalar la app.</p></div></div>
+      <div class="item"><div class="ico">🔒</div><div><b>Cuenta segura</b><p>Ingreso con correo y contraseña, recuperar contraseña y eliminar la cuenta cuando quiera.</p></div></div>
+    </div>
+  </div>
+
+  <div class="pie"><span>ReporteVecinal · App para Android</span><span>Sigue en la página siguiente: lo que gana la municipalidad →</span></div>
+</section>
+
+<!-- ================= HOJA 2: para la municipalidad ================= -->
+<section class="hoja">
+  <div class="tit2">
+    <h2>Para la municipalidad</h2>
+    <p>Un panel web para ver, ordenar y resolver los reportes de toda la comuna en un solo lugar, y para hablarle directo a los vecinos cuando más se necesita.</p>
+  </div>
+
+  <div class="panel">
+    <div>
+      <div class="mapa">
+        <div class="titulo">Mapa en vivo <span>Filtro: todas las categorías</span></div>
+        <div class="sector" style="left:40mm;top:22mm;width:30mm;height:30mm"></div>
+        <div class="pin" style="left:12mm;top:20mm;background:#1565C0"></div>
+        <div class="pin" style="left:25mm;top:43mm;background:#1565C0"></div>
+        <div class="pin" style="left:50mm;top:33mm;background:#C62828"></div>
+        <div class="pin" style="left:60mm;top:42mm;background:#EF6C00"></div>
+        <div class="pin" style="left:34mm;top:28mm;background:#2E7D32"></div>
+        <div class="pin" style="left:66mm;top:15mm;background:#1565C0"></div>
+        <div class="pin" style="left:8mm;top:50mm;background:#EF6C00"></div>
+      </div>
+      <div class="ley"><span><i style="background:#C62828"></i>Personas en riesgo</span><span><i style="background:#EF6C00"></i>Afecta vivienda</span><span><i style="background:#1565C0"></i>Normal</span><span><i style="background:#2E7D32"></i>Resuelto</span></div>
+    </div>
+    <div class="lista">
+      <div class="item"><div class="ico">🗺️</div><div><b>Mapa en vivo de la comuna</b><p>Filtra por categoría o «solo emergencias». Los colores muestran la urgencia para decidir dónde mandar las cuadrillas.</p></div></div>
+      <div class="item"><div class="ico">✅</div><div><b>Gestión de estados</b><p>Pasa cada reporte a Asignado o Resuelto; el vecino lo ve al instante en su celular.</p></div></div>
+      <div class="item"><div class="ico">📊</div><div><b>Prioridad por afectados</b><p>Ordena los reportes por cuántos vecinos dicen «a mí también me afecta».</p></div></div>
+      <div class="item"><div class="ico">🚩</div><div><b>Revisión de denuncias</b><p>Descarta la denuncia o cierra el reporte, con la razón guardada en el historial.</p></div></div>
+      <div class="item"><div class="ico">📣</div><div><b>Avisos por sector</b><p>Envía un aviso a toda la comuna o solo a un sector marcado en el mapa (el círculo punteado).</p></div></div>
+    </div>
+  </div>
+
+  <div class="emerg">
+    <div>
+      <h3>🚨 Modo Emergencia</h3>
+      <p>Para temporales, lluvias fuertes o cortes de agua y luz. La municipalidad lo activa para la comuna desde el panel, con un aviso. En la app aparece un banner rojo y las categorías de emergencia salen primero. En el panel se ordenan por urgencia y fecha.</p>
+      <ul><li>Anegamiento</li><li>Árbol caído</li><li>Cable eléctrico cortado</li><li>Techo o estructura dañada</li><li>Calle cortada</li><li>Corte de agua</li><li>Corte de luz</li></ul>
+    </div>
+    <div>
+      <div class="banner"><b>⚠ Emergencia activa en San Ramón</b>Sistema frontal: evite los pasos bajo nivel. Reporte anegamientos y árboles caídos.</div>
+      <div class="urg"><div><span></span>Hay personas en riesgo</div><div><span style="background:#EF6C00"></span>Afecta mi vivienda</div></div>
+    </div>
+  </div>
+
+  <div class="porque">
+    <div class="dato"><b>Gratis para el vecino</b><p>Descargar y usar la app no tiene costo.</p></div>
+    <div class="dato"><b>Datos en Chile</b><p>La información se guarda en servidores de Google Cloud en Santiago.</p></div>
+    <div class="dato"><b>Menos llamadas repetidas</b><p>Cada problema llega una vez, con foto, lugar y número de afectados.</p></div>
+    <div class="dato"><b>Lista para un piloto</b><p>La app y el panel ya funcionan; se adaptan a la comuna.</p></div>
+  </div>
+
+  <div class="contacto">
+    <div>
+      <h3>Hagamos un piloto en San Ramón</h3>
+      <p>Me encantaría mostrarles la app y el panel en una reunión breve, presencial o por videollamada.</p>
+    </div>
+    <div class="datos-c"><b>Andrés Flores</b>Creador de ReporteVecinal<br>+56 9 3582 1623<br>andresfloresq45@gmail.com</div>
+  </div>
+
+  <div class="derechos">
+    <b>© 2026 Andrés Flores. Todos los derechos reservados.</b> ReporteVecinal —su nombre, logo, diseño, aplicación, panel web y código fuente— es una obra creada por Andrés Flores y está protegida por la Ley N° 17.336 de Propiedad Intelectual de Chile. Se prohíbe su copia, reproducción, distribución o modificación, total o parcial, sin autorización escrita del autor. Este folleto es informativo y no constituye una licencia de uso.
+  </div>
+</section>
+
+</body>
+</html>

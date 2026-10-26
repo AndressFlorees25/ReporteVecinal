@@ -1,0 +1,14 @@
+{
+  "name": "pruebas-reglas-reportevecinal",
+  "private": true,
+  "type": "module",
+  "description": "Pruebas de las reglas de seguridad de Firestore con el emulador de Firebase.",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-reportevecinal --config ../../firebase.json \"node --test reglas.test.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^14.11.0"
+  }
+}

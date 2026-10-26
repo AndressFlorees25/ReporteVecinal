@@ -1,0 +1,13 @@
+{
+  "name": "reportevecinal-demo",
+  "private": true,
+  "type": "module",
+  "description": "Carga y borra reportes de ejemplo para demostrar el panel",
+  "scripts": {
+    "cargar": "node cargar-demo.mjs",
+    "borrar": "node borrar-demo.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "12.7.0"
+  }
+}

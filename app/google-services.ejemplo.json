@@ -1,0 +1,30 @@
+{
+  "_comentario": "ARCHIVO DE EJEMPLO: reemplázalo por el google-services.json real descargado desde la consola de Firebase.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "reportevecinal-ejemplo",
+    "storage_bucket": "reportevecinal-ejemplo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "cl.reportevecinal.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyEJEMPLO_REEMPLAZAR_000000000000000"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

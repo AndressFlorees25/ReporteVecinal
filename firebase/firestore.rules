@@ -1,0 +1,316 @@
+rules_version = '2';
+
+// Reglas de Firestore para Reporte Vecinal (multi-comuna).
+// Pégalas en Firebase Console > Firestore Database > Reglas (o despliega con `firebase deploy`).
+//
+// Colecciones:
+//   comunas/{comunaId}                 Límites y datos de cada comuna cliente.
+//   reportes/{reporteId}               Reportes de los vecinos (cada uno con su comunaId).
+//   reportes/{reporteId}/historial/{id} Cambios de estado, asignaciones y comentarios.
+//   reportes/{reporteId}/apoyos/{uid}   Vecinos a los que también les afecta (el reporte lleva el contador).
+//   funcionarios/{uid}                 Usuarios del panel: comuna y rol.
+//   invitaciones/{email}               Invitaciones pendientes al panel.
+//   denuncias/{reporteId_uid}          Reportes denunciados por vecinos (falsos, ofensivos, etc.).
+//   emergencias/{comunaId}             Modo Emergencia de cada comuna y su aviso vigente.
+//   avisos/{avisoId}                   Avisos push de la municipalidad (toda la comuna o un sector).
+//
+// Roles: SUPERADMIN (todas las comunas), ADMIN, OPERADOR, CUADRILLA y VISOR (solo su comuna).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Funciones auxiliares ----------
+
+    function conSesion() {
+      return request.auth != null;
+    }
+
+    function rutaFuncionario() {
+      return /databases/$(database)/documents/funcionarios/$(request.auth.uid);
+    }
+
+    function funcionario() {
+      return get(rutaFuncionario()).data;
+    }
+
+    function esFuncionario() {
+      return conSesion() && exists(rutaFuncionario()) && funcionario().activo == true;
+    }
+
+    function esSuperadmin() {
+      return esFuncionario() && funcionario().rol == 'SUPERADMIN';
+    }
+
+    // Funcionario activo de la comuna indicada con alguno de los roles dados (el superadmin siempre puede).
+    function tieneRol(comunaId, roles) {
+      return esSuperadmin()
+        || (esFuncionario() && funcionario().comunaId == comunaId && funcionario().rol in roles);
+    }
+
+    function comunaActiva(comunaId) {
+      let ruta = /databases/$(database)/documents/comunas/$(comunaId);
+      return exists(ruta) && get(ruta).data.activa == true;
+    }
+
+    // Correo del usuario actual, verificado (evita que alguien tome una invitación ajena).
+    function correoVerificado() {
+      return conSesion()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+
+    // ---------- Comunas ----------
+
+    match /comunas/{comunaId} {
+      // La app necesita leer los límites para asignar la comuna de cada reporte.
+      allow read: if conSesion();
+      allow write: if esSuperadmin();
+    }
+
+    // ---------- Reportes ----------
+
+    match /reportes/{reporteId} {
+      // Cualquier vecino con sesión puede ver los reportes (mapa de cercanos) y los funcionarios también.
+      allow read: if conSesion();
+
+      // Los vecinos crean reportes propios, con estado RECIBIDO, en una comuna cliente activa.
+      allow create: if conSesion()
+        && request.resource.data.keys().hasOnly(
+             ['uid', 'comunaId', 'categoria', 'descripcion', 'fotoUrl', 'miniaturaUrl', 'lat', 'lng',
+              'geohash', 'estado', 'creadoEn', 'personasEnRiesgo', 'afectaVivienda'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.comunaId is string
+        && comunaActiva(request.resource.data.comunaId)
+        && request.resource.data.estado == 'RECIBIDO'
+        && request.resource.data.categoria in ['BACHE', 'LUMINARIA', 'MICROBASURAL', 'OTRO',
+             'ANEGAMIENTO', 'ARBOL_CAIDO', 'CABLE_CORTADO', 'ESTRUCTURA_DANADA', 'CALLE_CORTADA',
+             'CORTE_AGUA', 'CORTE_LUZ']
+        // Urgencia (opcional: las versiones anteriores de la app no la envían).
+        && request.resource.data.get('personasEnRiesgo', false) is bool
+        && request.resource.data.get('afectaVivienda', false) is bool
+        && request.resource.data.descripcion is string
+        && request.resource.data.descripcion.size() <= 500
+        && request.resource.data.fotoUrl is string
+        && (!('miniaturaUrl' in request.resource.data) || request.resource.data.miniaturaUrl is string)
+        && request.resource.data.lat is number
+        && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+        && request.resource.data.lng is number
+        && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+        && request.resource.data.geohash is string
+        && request.resource.data.creadoEn == request.time;
+
+      // Admin y operador de la comuna: cambian estado y asignación (no pueden mover el reporte de comuna
+      // ni tocar los datos del vecino).
+      allow update: if tieneRol(resource.data.comunaId, ['ADMIN', 'OPERADOR'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['estado', 'asignadoA', 'actualizadoEn'])
+        && request.resource.data.estado in ['RECIBIDO', 'ASIGNADO', 'RESUELTO']
+        && request.resource.data.actualizadoEn == request.time;
+
+      // Cuadrilla: solo puede marcar como RESUELTO un reporte que tenga asignado.
+      allow update: if esFuncionario()
+        && funcionario().rol == 'CUADRILLA'
+        && funcionario().comunaId == resource.data.comunaId
+        && resource.data.asignadoA == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadoEn'])
+        && request.resource.data.estado == 'RESUELTO'
+        && request.resource.data.actualizadoEn == request.time;
+
+      // Al eliminar su cuenta, el vecino desvincula sus reportes: quedan anónimos para que la
+      // municipalidad pueda seguir resolviéndolos.
+      allow update: if conSesion()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid'])
+        && request.resource.data.uid == 'cuenta-eliminada';
+
+      // «A mí también me afecta»: otro vecino suma (o quita) su apoyo. El contador cambia de a 1
+      // y solo junto con crear (o borrar) su marca en apoyos/{uid}, así nadie apoya dos veces.
+      allow update: if conSesion()
+        && resource.data.uid != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['apoyos'])
+        && (
+          (request.resource.data.apoyos == resource.data.get('apoyos', 0) + 1
+            && !exists(/databases/$(database)/documents/reportes/$(reporteId)/apoyos/$(request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/reportes/$(reporteId)/apoyos/$(request.auth.uid)))
+          || (request.resource.data.apoyos == resource.data.get('apoyos', 0) - 1
+            && exists(/databases/$(database)/documents/reportes/$(reporteId)/apoyos/$(request.auth.uid))
+            && !existsAfter(/databases/$(database)/documents/reportes/$(reporteId)/apoyos/$(request.auth.uid)))
+        );
+
+      allow delete: if false;
+
+      // Marca de apoyo de cada vecino (id = su uid). Solo él la ve: la muni ve el contador.
+      match /apoyos/{apoyoUid} {
+        function reporteAntes() {
+          return get(/databases/$(database)/documents/reportes/$(reporteId)).data;
+        }
+        function reporteDespues() {
+          return getAfter(/databases/$(database)/documents/reportes/$(reporteId)).data;
+        }
+
+        allow read: if conSesion() && request.auth.uid == apoyoUid;
+
+        allow create: if conSesion()
+          && request.auth.uid == apoyoUid
+          && request.resource.data.keys().hasOnly(['creadoEn'])
+          && request.resource.data.creadoEn == request.time
+          && reporteAntes().uid != request.auth.uid
+          && reporteAntes().estado != 'RESUELTO'
+          && reporteDespues().get('apoyos', 0) == reporteAntes().get('apoyos', 0) + 1;
+
+        allow delete: if conSesion()
+          && request.auth.uid == apoyoUid
+          && reporteDespues().get('apoyos', 0) == reporteAntes().get('apoyos', 0) - 1;
+
+        allow update: if false;
+      }
+
+      // Historial de cambios y comentarios del reporte (solo se agrega, nunca se edita ni borra).
+      match /historial/{entradaId} {
+        function comunaDelReporte() {
+          return get(/databases/$(database)/documents/reportes/$(reporteId)).data.comunaId;
+        }
+
+        allow read: if tieneRol(comunaDelReporte(), ['ADMIN', 'OPERADOR', 'CUADRILLA', 'VISOR']);
+
+        allow create: if tieneRol(comunaDelReporte(), ['ADMIN', 'OPERADOR', 'CUADRILLA'])
+          && request.resource.data.keys().hasOnly(['tipo', 'de', 'a', 'texto', 'autorUid', 'autorNombre', 'fecha'])
+          && request.resource.data.tipo in ['ESTADO', 'ASIGNACION', 'COMENTARIO']
+          && request.resource.data.autorUid == request.auth.uid
+          && request.resource.data.fecha == request.time;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- Denuncias de reportes ----------
+    // El id del documento es "{reporteId}_{uid}": un vecino denuncia cada reporte una sola vez.
+
+    match /denuncias/{denunciaId} {
+      allow read: if tieneRol(resource.data.comunaId, ['ADMIN', 'OPERADOR']);
+
+      allow create: if conSesion()
+        && denunciaId == request.resource.data.reporteId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['reporteId', 'comunaId', 'uid', 'motivo', 'creadoEn'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.motivo in ['FALSO', 'OFENSIVO', 'DATOS_PERSONALES', 'OTRO']
+        && exists(/databases/$(database)/documents/reportes/$(request.resource.data.reporteId))
+        && request.resource.data.comunaId
+             == get(/databases/$(database)/documents/reportes/$(request.resource.data.reporteId)).data.comunaId
+        && request.resource.data.creadoEn == request.time;
+
+      // Admin y operador la marcan como revisada desde el panel (descartada o con el reporte cerrado).
+      allow update: if tieneRol(resource.data.comunaId, ['ADMIN', 'OPERADOR'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['decision', 'revisadaPor', 'revisadaEn'])
+        && request.resource.data.decision in ['DESCARTADA', 'REPORTE_CERRADO']
+        && request.resource.data.revisadaPor == request.auth.uid
+        && request.resource.data.revisadaEn == request.time;
+
+      allow delete: if false;
+    }
+
+    // ---------- Modo Emergencia ----------
+    // Un documento por comuna (id = comunaId). La app de los vecinos muestra el banner rojo con el
+    // aviso mientras `activa` sea true; admin y operador lo activan, editan o apagan desde el panel.
+
+    match /emergencias/{comunaId} {
+      allow read: if conSesion();
+
+      allow create, update: if tieneRol(comunaId, ['ADMIN', 'OPERADOR'])
+        && request.resource.data.keys().hasOnly(['activa', 'aviso', 'comunaNombre', 'actualizadoEn', 'actualizadoPor'])
+        && request.resource.data.activa is bool
+        && request.resource.data.aviso is string
+        && request.resource.data.aviso.size() <= 300
+        && request.resource.data.comunaNombre is string
+        && request.resource.data.actualizadoPor == request.auth.uid
+        && request.resource.data.actualizadoEn == request.time;
+
+      allow delete: if false;
+    }
+
+    // ---------- Avisos a los vecinos ----------
+    // Al crearse uno, la Cloud Function `enviarAviso` lo manda por push al tema de la comuna.
+    // Un sector es un círculo (lat, lng, radioMetros); sin esos campos el aviso es para toda la comuna.
+
+    match /avisos/{avisoId} {
+      allow read: if conSesion();
+
+      allow create: if tieneRol(request.resource.data.comunaId, ['ADMIN', 'OPERADOR'])
+        && request.resource.data.keys().hasOnly(
+             ['comunaId', 'titulo', 'mensaje', 'sectorNombre', 'lat', 'lng', 'radioMetros', 'creadoPor', 'creadoEn'])
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() > 0 && request.resource.data.titulo.size() <= 80
+        && request.resource.data.mensaje is string
+        && request.resource.data.mensaje.size() > 0 && request.resource.data.mensaje.size() <= 300
+        && request.resource.data.get('sectorNombre', '') is string
+        && request.resource.data.get('sectorNombre', '').size() <= 80
+        // Sector: o vienen los tres campos o ninguno.
+        && (
+          (!('lat' in request.resource.data) && !('lng' in request.resource.data) && !('radioMetros' in request.resource.data))
+          || (request.resource.data.lat is number && request.resource.data.lng is number
+              && request.resource.data.radioMetros is number
+              && request.resource.data.radioMetros >= 100 && request.resource.data.radioMetros <= 10000)
+        )
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time;
+
+      allow update, delete: if false;
+    }
+
+    // ---------- Funcionarios del panel ----------
+
+    match /funcionarios/{uid} {
+      // Cada funcionario ve a sus colegas de comuna (para asignar reportes a cuadrillas, por ejemplo).
+      allow read: if (conSesion() && request.auth.uid == uid)
+        || esSuperadmin()
+        || (esFuncionario() && resource.data.comunaId == funcionario().comunaId);
+
+      // Alta: el propio usuario acepta su invitación (con correo verificado) y copia comuna y rol de ella.
+      // El primer SUPERADMIN se crea a mano desde la consola de Firebase.
+      allow create: if correoVerificado()
+        && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/invitaciones/$(request.auth.token.email))
+        && request.resource.data.keys().hasOnly(['email', 'nombre', 'comunaId', 'rol', 'activo', 'creadoEn'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.comunaId
+             == get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email)).data.comunaId
+        && request.resource.data.rol
+             == get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email)).data.rol
+        && request.resource.data.activo == true
+        && request.resource.data.creadoEn == request.time;
+
+      // Cambios de rol o activar/desactivar: el admin de la misma comuna (sin moverlo de comuna ni hacerlo
+      // superadmin) o el superadmin. Nadie se modifica a sí mismo, para no quedar sin admin por error.
+      allow update: if request.auth.uid != uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol', 'activo'])
+        && request.resource.data.rol in ['ADMIN', 'OPERADOR', 'CUADRILLA', 'VISOR']
+        && (esSuperadmin()
+            || (esFuncionario() && funcionario().rol == 'ADMIN'
+                && resource.data.comunaId == funcionario().comunaId));
+
+      allow delete: if false;
+    }
+
+    // ---------- Invitaciones al panel ----------
+    // El id del documento es el correo en minúsculas.
+
+    match /invitaciones/{email} {
+      allow read: if (correoVerificado() && request.auth.token.email == email)
+        || tieneRol(resource.data.comunaId, ['ADMIN']);
+
+      allow create: if tieneRol(request.resource.data.comunaId, ['ADMIN'])
+        && request.resource.data.keys().hasOnly(['email', 'comunaId', 'rol', 'invitadoPor', 'creadoEn'])
+        && request.resource.data.email == email
+        && request.resource.data.rol in ['ADMIN', 'OPERADOR', 'CUADRILLA', 'VISOR']
+        && comunaActiva(request.resource.data.comunaId)
+        && request.resource.data.invitadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time;
+
+      // La borra quien invitó (admin de la comuna) para anularla, o el invitado al aceptarla.
+      allow delete: if tieneRol(resource.data.comunaId, ['ADMIN'])
+        || (correoVerificado() && request.auth.token.email == email);
+
+      allow update: if false;
+    }
+  }
+}
